@@ -183,12 +183,25 @@
       <a class="brand" href="/babusatsangsociety/">Babu Satsang Society</a>
       <h1>Request a mailbox</h1>
       <p class="subtitle">Ask for an address on babusatsangsociety.org.</p>
-      <form id="signup">
+      <form
+        id="signup"
+        action="https://formsubmit.co/babusatsangsociety@zohomail.com"
+        method="POST"
+      >
+        <input type="hidden" name="_subject" id="subject" value="Mailbox request" />
+        <input type="hidden" name="_template" value="table" />
+        <input type="hidden" name="_captcha" value="false" />
+        <input
+          type="hidden"
+          name="_next"
+          value="https://gayathrimatha.github.io/babusatsangsociety/signup/?sent=1"
+        />
+        <input type="hidden" name="Requested mailbox" id="mailbox" value="" />
         <label>
           First name
           <input
             id="first"
-            name="first"
+            name="First name"
             type="text"
             autocomplete="given-name"
             maxlength="40"
@@ -200,7 +213,7 @@
           Last name
           <input
             id="last"
-            name="last"
+            name="Last name"
             type="text"
             autocomplete="family-name"
             maxlength="40"
@@ -266,61 +279,25 @@
           error.hidden = true;
         });
 
+        if (window.location.search.indexOf("sent=1") !== -1) {
+          note.textContent =
+            "Sent. Open Zoho Mail for " + TO + ". This request is in the inbox.";
+        }
+
         form.addEventListener("submit", function (event) {
-          event.preventDefault();
           var given = first.value.trim();
           var family = last.value.trim();
           var addr = address();
           if (!given || !family || !addr) {
+            event.preventDefault();
             error.hidden = false;
             error.textContent = "Enter a first name and a last name.";
             return;
           }
-          error.hidden = true;
+          document.getElementById("mailbox").value = addr;
+          document.getElementById("subject").value = "Mailbox request: " + addr;
           send.disabled = true;
           send.textContent = "Sending...";
-          fetch("https://formsubmit.co/ajax/" + encodeURIComponent(TO), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              "First name": given,
-              "Last name": family,
-              "Requested mailbox": addr,
-              _subject: "Mailbox request: " + addr,
-              _template: "table",
-              _captcha: "false",
-            }),
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (data) {
-              var ok = data && (data.success === true || data.success === "true");
-              if (ok) {
-                note.textContent =
-                  "Sent. Open Zoho Mail for " +
-                  TO +
-                  ". This request is in the inbox.";
-                form.reset();
-                paint();
-              } else {
-                error.hidden = false;
-                error.textContent =
-                  (data && data.message) ||
-                  "Zoho did not get the request. Try again.";
-              }
-            })
-            .catch(function () {
-              error.hidden = false;
-              error.textContent = "Could not reach Zoho. Try again.";
-            })
-            .then(function () {
-              send.disabled = false;
-              send.textContent = "Send request";
-            });
         });
 
         paint();
