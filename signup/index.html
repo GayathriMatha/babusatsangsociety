@@ -251,7 +251,24 @@
         var error = document.getElementById("error");
         var note = document.getElementById("note");
         var send = document.getElementById("send");
+        var gotram = document.getElementById("gotram");
         var form = document.getElementById("signup");
+        var STORE = "bss-mailbox-requests";
+
+        function saved() {
+          try {
+            var list = JSON.parse(localStorage.getItem(STORE) || "[]");
+            return Array.isArray(list) ? list : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function remember(addr) {
+          var list = saved();
+          if (list.indexOf(addr) === -1) list.push(addr);
+          localStorage.setItem(STORE, JSON.stringify(list));
+        }
 
         function part(value) {
           return String(value || "")
@@ -299,12 +316,20 @@
           var given = first.value.trim();
           var family = last.value.trim();
           var addr = address();
-          if (!given || !family || !addr) {
+          if (!given || !family || !addr || !gotram.value.trim()) {
             event.preventDefault();
             error.hidden = false;
-            error.textContent = "Enter a first name and a last name.";
+            error.textContent = "Enter a first name, last name, and gotram.";
             return;
           }
+          if (saved().indexOf(addr) !== -1) {
+            event.preventDefault();
+            error.hidden = false;
+            error.textContent =
+              addr + " was already requested from this browser.";
+            return;
+          }
+          remember(addr);
           document.getElementById("mailbox").value = addr;
           document.getElementById("subject").value = "Mailbox request: " + addr;
           send.disabled = true;
