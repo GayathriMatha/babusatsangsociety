@@ -214,7 +214,7 @@
         <p id="error" class="error" hidden></p>
         <button id="send" type="submit">Send request</button>
       </form>
-      <p class="note">Someone will create the mailbox after this request.</p>
+      <p id="note" class="note">The request shows up in Zoho Mail. The mailbox is created after that.</p>
     </main>
     <script>
       (function () {
@@ -225,6 +225,8 @@
         var full = document.getElementById("full");
         var preview = document.getElementById("preview");
         var error = document.getElementById("error");
+        var note = document.getElementById("note");
+        var send = document.getElementById("send");
         var form = document.getElementById("signup");
 
         function part(value) {
@@ -266,29 +268,59 @@
 
         form.addEventListener("submit", function (event) {
           event.preventDefault();
-          var name = (first.value.trim() + " " + last.value.trim()).trim();
+          var given = first.value.trim();
+          var family = last.value.trim();
           var addr = address();
-          if (!name || !addr) {
+          if (!given || !family || !addr) {
             error.hidden = false;
             error.textContent = "Enter a first name and a last name.";
             return;
           }
-          var subject = "Mailbox request: " + addr;
-          var body =
-            "First name: " +
-            first.value.trim() +
-            "\nLast name: " +
-            last.value.trim() +
-            "\nRequested mailbox: " +
-            addr +
-            "\n\nPlease create this mailbox.";
-          window.location.href =
-            "mailto:" +
-            TO +
-            "?subject=" +
-            encodeURIComponent(subject) +
-            "&body=" +
-            encodeURIComponent(body);
+          error.hidden = true;
+          send.disabled = true;
+          send.textContent = "Sending...";
+          fetch("https://formsubmit.co/ajax/" + encodeURIComponent(TO), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              "First name": given,
+              "Last name": family,
+              "Requested mailbox": addr,
+              _subject: "Mailbox request: " + addr,
+              _template: "table",
+              _captcha: "false",
+            }),
+          })
+            .then(function (response) {
+              return response.json();
+            })
+            .then(function (data) {
+              var ok = data && (data.success === true || data.success === "true");
+              if (ok) {
+                note.textContent =
+                  "Sent. Open Zoho Mail for " +
+                  TO +
+                  ". This request is in the inbox.";
+                form.reset();
+                paint();
+              } else {
+                error.hidden = false;
+                error.textContent =
+                  (data && data.message) ||
+                  "Zoho did not get the request. Try again.";
+              }
+            })
+            .catch(function () {
+              error.hidden = false;
+              error.textContent = "Could not reach Zoho. Try again.";
+            })
+            .then(function () {
+              send.disabled = false;
+              send.textContent = "Send request";
+            });
         });
 
         paint();
