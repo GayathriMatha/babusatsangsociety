@@ -185,38 +185,31 @@
       <p class="subtitle">Ask for an address on babusatsangsociety.org.</p>
       <form id="signup">
         <label>
-          Your name
+          First name
           <input
-            id="person"
-            name="person"
+            id="first"
+            name="first"
             type="text"
-            autocomplete="name"
-            maxlength="80"
+            autocomplete="given-name"
+            maxlength="40"
             required
-            placeholder="Your name"
+            placeholder="First name"
           />
         </label>
         <label>
-          Mailbox
-          <span class="addr">
-            <input
-              id="local"
-              name="local"
-              type="text"
-              inputmode="email"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
-              maxlength="64"
-              required
-              placeholder="name"
-              aria-describedby="preview"
-            />
-            <span class="domain">@babusatsangsociety.org</span>
-          </span>
+          Last name
+          <input
+            id="last"
+            name="last"
+            type="text"
+            autocomplete="family-name"
+            maxlength="40"
+            required
+            placeholder="Last name"
+          />
         </label>
         <p id="preview" class="preview empty" aria-live="polite">
-          Your address: <strong id="full">name@babusatsangsociety.org</strong>
+          Your address: <strong id="full">firstname.lastname@babusatsangsociety.org</strong>
         </p>
         <p id="error" class="error" hidden></p>
         <button id="send" type="submit">Send request</button>
@@ -227,27 +220,28 @@
       (function () {
         var DOMAIN = "babusatsangsociety.org";
         var TO = "babusatsangsociety@zohomail.com";
-        var person = document.getElementById("person");
-        var local = document.getElementById("local");
+        var first = document.getElementById("first");
+        var last = document.getElementById("last");
         var full = document.getElementById("full");
         var preview = document.getElementById("preview");
         var error = document.getElementById("error");
         var form = document.getElementById("signup");
 
-        function mailboxLocal(value) {
+        function part(value) {
           return String(value || "")
             .trim()
             .toLowerCase()
             .replace(/\s+/g, "")
-            .replace(/[^a-z0-9._-]/g, "")
-            .replace(/\.{2,}/g, ".")
-            .replace(/^[-.]+|[-.]+$/g, "")
-            .slice(0, 64);
+            .replace(/[^a-z0-9-]/g, "")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 40);
         }
 
         function address() {
-          var box = mailboxLocal(local.value);
-          return box ? box + "@" + DOMAIN : "";
+          var given = part(first.value);
+          var family = part(last.value);
+          if (!given || !family) return "";
+          return given + "." + family + "@" + DOMAIN;
         }
 
         function paint() {
@@ -256,32 +250,35 @@
             full.textContent = addr;
             preview.classList.remove("empty");
           } else {
-            full.textContent = "name@" + DOMAIN;
+            full.textContent = "firstname.lastname@" + DOMAIN;
             preview.classList.add("empty");
           }
         }
 
-        local.addEventListener("input", paint);
-        person.addEventListener("input", function () {
+        first.addEventListener("input", paint);
+        last.addEventListener("input", paint);
+        first.addEventListener("input", function () {
           error.hidden = true;
         });
-        local.addEventListener("input", function () {
+        last.addEventListener("input", function () {
           error.hidden = true;
         });
 
         form.addEventListener("submit", function (event) {
           event.preventDefault();
-          var name = person.value.trim();
+          var name = (first.value.trim() + " " + last.value.trim()).trim();
           var addr = address();
           if (!name || !addr) {
             error.hidden = false;
-            error.textContent = "Enter your name and the mailbox you want.";
+            error.textContent = "Enter a first name and a last name.";
             return;
           }
           var subject = "Mailbox request: " + addr;
           var body =
-            "Name: " +
-            name +
+            "First name: " +
+            first.value.trim() +
+            "\nLast name: " +
+            last.value.trim() +
             "\nRequested mailbox: " +
             addr +
             "\n\nPlease create this mailbox.";
